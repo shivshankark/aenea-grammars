@@ -10,6 +10,8 @@ import aenea.misc
 import aenea.vocabulary
 
 from aenea import (
+    Function,
+    IntegerRef,
     Key,
     NoAction,
     Text
@@ -28,9 +30,14 @@ from dragonfly import (
     RuleRef
     )
 
+
 vim_context = aenea.wrappers.AeneaContext(
-    ProxyAppContext(match='regex', title='(?i).*VIM.*'),
+    ProxyAppContext(match='regex', title='(?i).*(VIM|FG).*'),
     AppContext(title='VIM')
+    )
+eclipse_context = aenea.wrappers.AeneaContext(
+    ProxyAppContext(match='regex', title='(?i).*ECLIPSE.*'),
+    AppContext(title='ECLIPSE')
     )
 
 command_t_context = aenea.wrappers.AeneaContext(
@@ -99,10 +106,10 @@ def execute_insertion_buffer(insertion_buffer):
 
 class InsertModeEntry(MappingRule):
     mapping = {
-        'inns': Key('i'),
-        'syn': Key('a'),
-        'phyllo': Key('o'),
-        'phyhigh': Key('O'),
+        'inns|insert': Key('i'),
+        'syn|append': Key('a'),
+        'phyllo|insert below': Key('o'),
+        'phyhigh|insert above': Key('O'),
         }
 ruleInsertModeEntry = RuleRef(InsertModeEntry(), name='InsertModeEntry')
 
@@ -143,6 +150,9 @@ def format_jumble(text):
     return ''.join(text)
 
 
+def format_capdotword(text):
+    return '.'.join([text[0].capitalize()] + text[1:])
+
 def format_dotword(text):
     return '.'.join(text)
 
@@ -150,6 +160,9 @@ def format_dotword(text):
 def format_dashword(text):
     return '-'.join(text)
 
+
+def format_say(text):
+    return ' '.join(text)
 
 def format_natword(text):
     return ' '.join(text)
@@ -165,7 +178,7 @@ def format_sentence(text):
 
 class IdentifierInsertion(CompoundRule):
     spec = ('[upper | natural] ( proper | camel | rel-path | abs-path | score | sentence |'
-            'scope-resolve | jumble | dotword | dashword | natword | snakeword | brooding-narrative) [<dictation>]')
+            'scope-resolve | jumble | dotword | capdotword |  dashword | natword | say | snakeword | brooding-narrative) [<dictation>]')
     extras = [Dictation(name='dictation')]
 
     def value(self, node):
@@ -217,7 +230,7 @@ class KeyInsertion(MappingRule):
         'slap [<count>]':       Key('enter:%(count)d'),
         'chuck [<count>]':      Key('del:%(count)d'),
         'scratch [<count>]':    Key('backspace:%(count)d'),
-        'ack':                  Key('escape'),
+        'ack|act':              Key('escape'),
         }
     extras = [ruleDigitalInteger[3]]
     defaults = {'count': 1}
@@ -225,7 +238,7 @@ ruleKeyInsertion = RuleRef(KeyInsertion(), name='KeyInsertion')
 
 
 class SpellingInsertion(MappingRule):
-    mapping = dict(('dig ' + key, val) for (key, val) in aenea.misc.DIGITS.iteritems())
+    mapping = dict(('dig|digit ' + key, val) for (key, val) in aenea.misc.DIGITS.iteritems())
     mapping.update(aenea.misc.LETTERS)
 
     def value(self, node):
@@ -414,7 +427,7 @@ rulePrimitiveMotion = RuleRef(PrimitiveMotion(), name='PrimitiveMotion')
 
 class UncountedMotion(MappingRule):
     mapping = {
-        'tect': Text('%%'),
+        'matching': Text('%%'),
         'matu': Text('M'),
         }
 ruleUncountedMotion = RuleRef(UncountedMotion(), name='UncountedMotion')
@@ -422,10 +435,10 @@ ruleUncountedMotion = RuleRef(UncountedMotion(), name='UncountedMotion')
 
 class MotionParameterMotion(MappingRule):
     mapping = {
-        'phytic': 'f',
-        'fitton': 'F',
-        'pre phytic': 't',
-        'pre fitton': 'T',
+        'until': 'f',
+        'back until': 'F',
+        'before': 't',
+        'back before': 'T',
         }
 ruleMotionParameterMotion = RuleRef(
     MotionParameterMotion(),
@@ -474,7 +487,7 @@ ruleMotion = RuleRef(Motion(), name='Motion')
 
 _OPERATORS = {
     'relo': '',
-    'dell': 'd',
+    'dale|dell': 'd',
     'chaos': 'c',
     'nab': 'y',
     'swap case': 'g~',
@@ -555,15 +568,168 @@ ruleOperatorApplication = Alternative([ruleOperatorApplicationMotion,
 # COMMANDS
 # ****************************************************************************
 
+def goto_line(n):
+    for c in str(n):
+        Key(c).execute()
+    Key("G").execute()
+
+
+def yank_lines(n, n2):
+    goto_line(n)
+    Key("V").execute()
+    goto_line(n2)
+    Key("y").execute()
+
+
+def delete_lines(n, n2):
+    goto_line(n)
+    Key("V").execute()
+    goto_line(n2)
+    Key("d").execute()
+
+
+basics_mapping = aenea.configuration.make_grammar_commands('vim', {
+    'vim': Text("vim"),
+
+#    # Moving between splits
+#    'split-left': Key("escape, c-h"),
+#    'split-left <n>': Key("escape, c-h:%(n)d"),
+#    'split-right': Key("escape, c-l"),
+#    'split-right <n>': Key("escape, c-l:%(n)d"),
+#    'split-up': Key("escape, c-k"),
+#    'split-down': Key("escape, c-j"),
+#    'split-close': Key("escape, colon, q, enter"),
+#    'open [in] split': Key("s"),
+#    'open [in] tab': Key("t"),
+
+    # Moving viewport
+    'set number': Key("escape") + Text(":set number") + Key("enter"),
+#    'bund': Key("escape, 2, 0, c-y"),
+#    'fund': Key("escape, 2, 0, c-e"),
+    'screen down': Key("escape, c-f"),
+    'screen up': Key("escape, c-b"),
+    'screen center': Key("escape, z") + Text("."),
+    'screen top': Key("escape, z, t"),
+    'screen bottom': Key("escape, z, b"),
+
+#    # Append to line
+#    'noop <n>': Key("escape") + Function(goto_line) + Key("A, enter"),
+#    'noop': Key("escape, A, enter"),
+#    'nope': Key("escape, A"),
+#    'nope <n>': Key("escape") + Function(goto_line) + Key("A"),
+#
+#    'prepend': Key("escape, I"),
+#    'insert': Key("escape, i"),
+#    'insert below': Key("escape, o"),
+#    'insert above': Key("escape, O"),
+#    'undo': Key("escape, u, i"),
+#    'scratch': Key("escape, u, i"),
+#    'escape': Key("escape"),
+    'filename': Key("escape, c-g"),
+    'save': Key("escape, colon, w, enter"),
+    'save and quit': Key("escape, colon, w, q, enter"),
+    'quit all': Key("escape, colon, q, a, enter"),
+    'discard': Key("escape, colon, q, exclamation"),
+#    '(vim|vic) tab <n>': Key("escape, comma, %(n)d"),
+#    'comma': Key("comma"),
+#    'comes': Key("comma, space"),
+#    'bish': Key("right, comma, space"),
+#    'cause': Key("colon, space"),
+#    '(rook|Brook|rock)': Key("right, colon, space"),
+#    'listed': Key("escape, s-a, comma, enter"),
+#    'fish': Key("right, rparen"),
+
+    # Finding text
+    'find <text>': Key("escape, slash") + Text("%(text)s") + Key("enter"),
+    'next': Key("escape, n"),
+    'prev|previous': Key("escape, N"),
+    'clear search': Key("escape, colon, n, o, h, enter"),
+
+#    # Character operations
+    'dart': Key("x"),
+    'dart <n>': Key("x:%(n)d"),
+    'replace letter': Key("r"),
+    'replace mode': Key("R"),
+    'change case': Key("s-backtick"),
+    'change case back': Key("b, s-backtick"),
+
+#    # Word operations
+#    '(doord|doored|gord)': Key("right, escape, d, i, w, i"),
+#    '(doord|doored|gord) back': Key("right, escape, b, d, w, i"),
+#    '(doord|doored|gord) <n>': Key("right, escape, %(n)d, d, w, i"),
+#    '(doord|doored|gord) back <n>': Key("right, escape, %(n)d, b, %(n)d, d, w, i"),
+#    'chord': Key("right, escape, c, i, w"),
+#    'chord <n>': Key("escape, right, c, %(n)d, w"),
+#    'sword': Key("escape, right, v, e"),
+#    'sword <n>': Key("escape, right, v, e:%(n)d"),
+#    'forward':  Key("escape, right, w, i"),
+#    'forward <n>': Key("escape, right, %(n)d, w, i"),
+#    'backward': Key("escape, b, i"),
+#    'backward <n>': Key("escape, %(n)d, b, i"),
+#    'stripword': Key("escape, b, left, del, e, a"),
+#
+#    # Line operations
+#    'dine': Key("escape, d:2"),
+#    'dine <n>': Key("escape") + Function(goto_line) + Key("d:2"),
+#    'dine paragraph' : Key("escape") + Key("d,a,p"), 
+#    'dine <n> (thru|through|to) <n2>': Key("escape") + Function(delete_lines),
+#    'chin': Key("escape, c:2"),
+#    'chin <n>': Key("escape") + Function(goto_line) + Key("c:2"),
+#    'nab line': Key("escape, y:2"),
+#    'nab line <n>': Key("escape") + Function(goto_line) + Key("y:2"),
+#    'nab line <n> (thru|through|to) <n2>': Key("escape") + Function(yank_lines),
+#
+#    'select until <pressKey>': Key("escape, v, t") + Text("%(pressKey)s"),
+#    'select including <pressKey>': Key("escape, v, f") + Text("%(pressKey)s"),
+#    'dell until <pressKey>': Key("escape, d, t") + Text("%(pressKey)s"),
+#    'dell including <pressKey>': Key("escape, d, f") + Text("%(pressKey)s"),
+#
+#    # Fancy operations
+#    'clay': Key("escape, c, i, dqoute"),
+#    'yip': Key("escape, right, y, i, lparen"),
+#    'yib': Key("escape, right, y, i lbrace"),
+#    'dap': Key("escape, right, s-d, s-a"),
+#
+#    # Copy and Paste
+#    'yank': Key("y"),
+#    'extract': Key("x"),
+#    'glue': Key('escape, p'),
+#
+    # Movement
+#    'up <n> (lines|line)': Key("%(n)d, up"),
+#    'down <n> (lines|line)': Key("%(n)d, down"),
+    'go to [line] <n>': Key("escape") + Function(goto_line),
+#    'matching': Key("escape, percent"),
+#    'rash': Key("escape, down, s-a"),
+#    'back': Key("escape, c-o"),
+#
+#    # Plug-ins
+#    'curb': Key("c-p"),
+#    'curb tab': Key("c-t"),
+#    'curb split': Key("c-v"),
+#    'nerd': Key("escape, colon") + Text("NERDTreeToggle") + Key("enter"),
+    })
+
+
+class Basics(MappingRule):
+    mapping = basics_mapping
+    extras = [
+        Dictation('text'),
+        IntegerRef('n', 1, 999),
+        IntegerRef('n2', 1, 999),
+#        Choice("pressKey", pressKeyMap),
+#        Choice("surroundChar", surroundCharsMap),
+    ]
+
 
 class PrimitiveCommand(MappingRule):
     mapping = {
         'vim scratch': Key('X'),
         'vim chuck': Key('x'),
-        'vim undo': Key('u'),
+        'undo': Key('u'),
         'plap': Key('P'),
         'plop': Key('p'),
-        'ditto': Text('.'),
+        'ditto|repeat': Text('.'),
         'ripple': 'macro',
         }
 rulePrimitiveCommand = RuleRef(PrimitiveCommand(), name='PrimitiveCommand')
@@ -631,6 +797,7 @@ class VimCommand(CompoundRule):
         execute_insertion_buffer(insertion_buffer)
 
 grammar.add_rule(VimCommand())
+grammar.add_rule(Basics())
 
 grammar.load()
 

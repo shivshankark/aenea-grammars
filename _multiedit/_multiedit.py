@@ -92,7 +92,7 @@ command_table = aenea.configuration.make_grammar_commands('multiedit', {
 
 class FormatRule(CompoundRule):
     spec = ('[upper | natural] ( proper | camel | rel-path | abs-path | score | sentence | '
-            'scope-resolve | jumble | dotword | dashword | natword | snakeword | brooding-narrative) [<dictation>]')
+            'scope-resolve | jumble | dotword | capdotword | dashword | natword | snakeword | brooding-narrative) [<dictation>]')
     extras = [Dictation(name='dictation')]
 
     def value(self, node):
