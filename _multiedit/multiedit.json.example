@@ -23,13 +23,13 @@
         "nab [<n>]": "nab [<n>]",
         "plop [<n>]": "plop [<n>]",
         "squishy [<n>]": "squishy [<n>]",
-        "strip": "strip",
-        "striss": "striss",
+        "truncate": "strip",
+        "truncate back": "striss",
         "trance [<n>]": "trance [<n>]",
         "wipe [<n>]": "wipe [<n>]",
         "bump [<n>]": "bump [<n>]",
         "dump [<n>]": "whack [<n>]"
     },
     "local_disable_context": "VIM",
-    "proxy_disable_context": {"match": "regex", "title": "(?i).*VIM.*"}
+    "proxy_disable_context": {"match": "regex", "title": "(?i).*(VIM|FG).*"}
 }

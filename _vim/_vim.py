@@ -417,9 +417,18 @@ class PrimitiveMotion(MappingRule):
         }
 
     for (spoken_object, command_object) in (('(lope | yope)', 'w'),
-                                            ('(lopert | yopert)', 'W')):
+                                            ('(lopert | yopert)', 'W'),
+                                            ('smote',"'"),
+                                            ('quote','"'),
+                                            ('circle','('),
+                                            ('square','['),
+                                            ('box','{')
+                                            ):
         for (spoken_modifier, command_modifier) in (('inner', 'i'),
-                                                    ('outer', 'a')):
+                                                    ('around', 'a'),
+                                                    ('outer', 'a'),
+                                                    ('phytic', 'f'),
+                                                    ('fitton', 't')):
             map_action = Text(command_modifier + command_object)
             mapping['%s %s' % (spoken_modifier, spoken_object)] = map_action
 rulePrimitiveMotion = RuleRef(PrimitiveMotion(), name='PrimitiveMotion')
@@ -435,10 +444,10 @@ ruleUncountedMotion = RuleRef(UncountedMotion(), name='UncountedMotion')
 
 class MotionParameterMotion(MappingRule):
     mapping = {
-        'until': 'f',
-        'back until': 'F',
-        'before': 't',
-        'back before': 'T',
+        'phytic': 'f',
+        'pre phytic': 'F',
+        'fitton': 't',
+        'pre fitton': 'T',
         }
 ruleMotionParameterMotion = RuleRef(
     MotionParameterMotion(),
@@ -626,7 +635,7 @@ basics_mapping = aenea.configuration.make_grammar_commands('vim', {
 #    'scratch': Key("escape, u, i"),
 #    'escape': Key("escape"),
     'filename': Key("escape, c-g"),
-    'save': Key("escape, colon, w, enter"),
+    'save [file]': Key("escape, colon, w, enter"),
     'save and quit': Key("escape, colon, w, q, enter"),
     'quit all': Key("escape, colon, q, a, enter"),
     'discard': Key("escape, colon, q, exclamation"),
@@ -640,7 +649,7 @@ basics_mapping = aenea.configuration.make_grammar_commands('vim', {
 #    'fish': Key("right, rparen"),
 
     # Finding text
-    'find <text>': Key("escape, slash") + Text("%(text)s") + Key("enter"),
+    #'find <text>': Key("escape, slash") + Text("%(text)s") + Key("enter"),
     'next': Key("escape, n"),
     'prev|previous': Key("escape, N"),
     'clear search': Key("escape, colon, n, o, h, enter"),

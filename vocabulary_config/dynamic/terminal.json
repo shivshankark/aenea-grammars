@@ -1,0 +1,23 @@
+
+[
+{
+    "name": "terminal",
+    "tags": ["multiedit", "global"],
+    "vocabulary": {
+	    "change (directory|folder)":"cd ",
+	    "grill":			"grep -ril",
+	    "rattle":			"ls -lart ",
+	    "vim":			"vim "
+    },
+    "shortcuts": {
+    }
+},
+{
+    "name": "terminal",
+    "tags": ["multiedit.count"],
+    "vocabulary": {
+    },
+    "shortcuts": {
+    }
+}
+]
