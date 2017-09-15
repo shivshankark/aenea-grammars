@@ -655,8 +655,8 @@ basics_mapping = aenea.configuration.make_grammar_commands('vim', {
     'clear search': Key("escape, colon, n, o, h, enter"),
 
 #    # Character operations
-    'dart': Key("x"),
-    'dart <n>': Key("x:%(n)d"),
+#    'dart': Key("x"),
+#    'dart <n>': Key("x:%(n)d"),
     'replace letter': Key("r"),
     'replace mode': Key("R"),
     'change case': Key("s-backtick"),
